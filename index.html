@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crucigrama · Derecho Civil · Semana 5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:   #0A1F3D; --navy2: #123164; --navy3: #1A4A8A;
+  --sky:    #4A90D9; --sky2:  #6AAEE8; --skylt: #A8CFEE; --skypale:#C8DFF5;
+  --white:  #FFFFFF; --off:   #F0F6FB; --silver:#D6E4F0; --slate:  #4A6080;
+  --green:  #2E7D32; --greenlt:#4CAF50;
+  --orange: #E65100; --red:   #C62828; --gold:  #F9A825;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--navy);color:var(--white);min-height:100vh;}
+
+/* ── HEADER ── */
+.page-header{background:var(--navy2);border-bottom:2px solid rgba(74,144,217,.2);padding:.7rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+.hdr-left{display:flex;flex-direction:column;gap:.1rem;}
+.hdr-badge{font-family:'Barlow Condensed',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.15em;color:var(--sky);text-transform:uppercase;}
+.hdr-title{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--white);}
+.hdr-score{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:700;color:var(--sky);}
+
+/* ── TIMER ── */
+.timer-row{display:flex;align-items:center;justify-content:center;gap:1rem;padding:.5rem .8rem;background:rgba(74,144,217,.08);border-bottom:1px solid rgba(74,144,217,.15);}
+.timer-display{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:700;color:var(--white);letter-spacing:.05em;}
+.timer-display.urgent{color:#EF5350;animation:pulse .6s ease-in-out infinite;}
+.pts-badge{background:rgba(74,144,217,.18);border:1px solid rgba(74,144,217,.35);border-radius:20px;padding:.2rem .75rem;font-size:.78rem;color:var(--skylt);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* ── NAME SCREEN ── */
+#screen-start{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:85vh;padding:2rem;gap:1rem;}
+.start-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2.2rem,8vw,4rem);font-weight:900;text-align:center;line-height:1;}
+.start-title span{color:var(--sky);}
+.start-sub{color:var(--skylt);font-size:.95rem;text-align:center;}
+.start-rules{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;margin:.5rem 0;}
+.rule-chip{background:rgba(74,144,217,.12);border:1px solid rgba(74,144,217,.3);border-radius:20px;padding:.25rem .8rem;font-size:.78rem;color:var(--skylt);}
+.name-group{width:100%;max-width:360px;}
+.name-group label{display:block;font-size:.75rem;font-weight:600;letter-spacing:.1em;color:var(--skylt);text-transform:uppercase;margin-bottom:.4rem;}
+.name-group input{width:100%;padding:.8rem 1rem;background:rgba(74,144,217,.1);border:1.5px solid rgba(74,144,217,.35);border-radius:10px;color:var(--white);font-family:'Barlow',sans-serif;font-size:1rem;outline:none;transition:border-color .2s;}
+.name-group input:focus{border-color:var(--sky);}
+.name-group input::placeholder{color:var(--slate);}
+.btn-primary{display:inline-flex;align-items:center;gap:.5rem;padding:.9rem 2rem;background:var(--sky);color:var(--navy);font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;border:none;border-radius:10px;cursor:pointer;transition:transform .15s,background .15s;box-shadow:0 4px 18px rgba(74,144,217,.35);}
+.btn-primary:hover{background:var(--sky2);transform:translateY(-2px);}
+
+/* ── GAME LAYOUT ── */
+#screen-game{display:none;flex-direction:column;}
+.game-body{display:flex;gap:0;flex-wrap:wrap;}
+
+/* ── GRILLA ── */
+.grid-wrap{padding:.8rem;overflow-x:auto;flex-shrink:0;}
+.cw-grid{display:inline-grid;gap:2px;background:var(--navy2);border:2px solid var(--navy3);border-radius:8px;padding:2px;}
+.cell{width:32px;height:32px;position:relative;background:var(--navy2);}
+.cell.active{background:var(--navy3);}
+.cell.blocked{background:var(--navy);cursor:default;}
+.cell.correct{background:rgba(46,125,50,.25) !important;}
+.cell.wrong{background:rgba(198,40,40,.2) !important;}
+.cell.highlighted{background:rgba(74,144,217,.25) !important;}
+.cell.active-word{background:rgba(74,144,217,.15) !important;}
+.cell.active-cursor{background:rgba(74,144,217,.45) !important;}
+.cell input{position:absolute;inset:0;width:100%;height:100%;background:transparent;border:none;outline:none;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;color:var(--white);text-transform:uppercase;cursor:pointer;caret-color:transparent;}
+.cell-num{position:absolute;top:1px;left:2px;font-size:8px;font-weight:700;color:var(--skylt);line-height:1;pointer-events:none;z-index:2;}
+
+/* ── PISTAS ── */
+.clues-panel{flex:1;min-width:260px;max-width:420px;padding:.8rem;overflow-y:auto;max-height:calc(100vh - 120px);}
+.clues-section{margin-bottom:1rem;}
+.clues-section h3{font-family:'Barlow Condensed',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.14em;color:var(--sky);text-transform:uppercase;margin-bottom:.5rem;padding-bottom:.3rem;border-bottom:1px solid rgba(74,144,217,.2);}
+.clue-item{display:flex;gap:.5rem;padding:.4rem .5rem;border-radius:8px;cursor:pointer;transition:background .15s;margin-bottom:.25rem;align-items:flex-start;}
+.clue-item:hover{background:rgba(74,144,217,.12);}
+.clue-item.active-clue{background:rgba(74,144,217,.22);border-left:2px solid var(--sky);}
+.clue-item.solved-clue{opacity:.5;}
+.clue-item.solved-clue .clue-word{text-decoration:line-through;color:var(--greenlt);}
+.clue-num{font-family:'Barlow Condensed',sans-serif;font-size:.82rem;font-weight:700;color:var(--sky);min-width:22px;flex-shrink:0;padding-top:.05rem;}
+.clue-text{font-size:.82rem;color:var(--skylt);line-height:1.45;}
+.clue-word{font-size:.72rem;color:var(--greenlt);font-weight:600;display:block;margin-top:.15rem;}
+
+/* ── RESULT ── */
+#screen-result{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:85vh;padding:2rem;gap:1rem;text-align:center;}
+.result-emoji{font-size:3.5rem;}
+.result-name{font-family:'Barlow Condensed',sans-serif;font-size:.8rem;letter-spacing:.15em;color:var(--sky);text-transform:uppercase;}
+.result-pts{font-family:'Barlow Condensed',sans-serif;font-size:clamp(4rem,14vw,6rem);font-weight:900;color:var(--sky);line-height:1;}
+.result-sub{font-size:.88rem;color:var(--skylt);}
+.result-medal{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;padding:.4rem 1.1rem;border-radius:20px;}
+.medal-gold  {background:rgba(249,168,37,.2);border:1.5px solid var(--gold);color:var(--gold);}
+.medal-silver{background:rgba(144,164,174,.2);border:1.5px solid #90A4AE;color:#90A4AE;}
+.medal-ok    {background:rgba(74,144,217,.15);border:1.5px solid var(--sky);color:var(--sky);}
+.result-breakdown{width:100%;max-width:460px;background:var(--navy2);border-radius:12px;overflow:hidden;border:1px solid rgba(74,144,217,.2);}
+.bd-row{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;border-bottom:1px solid rgba(74,144,217,.1);font-size:.82rem;}
+.bd-row:last-child{border-bottom:none;}
+.bd-icon{flex-shrink:0;}
+.bd-word{color:var(--skylt);flex:1;text-align:left;}
+.bd-pts{font-family:'Barlow Condensed',sans-serif;font-size:.78rem;font-weight:700;padding:.18rem .5rem;border-radius:6px;}
+.bd-pts.ok {background:rgba(46,125,50,.25);color:var(--greenlt);}
+.bd-pts.bad{background:rgba(198,40,40,.2);color:#EF5350;}
+.btn-retry{padding:.7rem 1.8rem;background:transparent;color:var(--skylt);font-family:'Barlow Condensed',sans-serif;font-size:.92rem;font-weight:600;border:1.5px solid rgba(74,144,217,.3);border-radius:10px;cursor:pointer;transition:border-color .15s,color .15s;}
+.btn-retry:hover{border-color:var(--sky);color:var(--sky);}
+
+/* ── PROGRESS ── */
+.progress-wrap{height:3px;background:rgba(74,144,217,.15);width:100%;}
+.progress-bar{height:3px;background:var(--sky);transition:width .4s;}
+</style>
+</head>
+<body>
+
+<!-- PANTALLA INICIO -->
+<div id="screen-start">
+  <p class="start-badge" style="font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.18em;color:var(--sky);text-transform:uppercase;">Derecho Civil · Semana 5</p>
+  <h1 class="start-title">Cruci<span>grama</span></h1>
+  <p class="start-sub">Nombre · Domicilio · Estado civil · Derechos personalísimos</p>
+  <div class="start-rules">
+    <span class="rule-chip">10 palabras</span>
+    <span class="rule-chip">⏱ Contra el reloj</span>
+    <span class="rule-chip">🏆 Más rápido = más puntos</span>
+  </div>
+  <div class="name-group">
+    <label for="player-name">Tu nombre</label>
+    <input id="player-name" type="text" placeholder="Ej: María González" maxlength="40" autocomplete="off">
+  </div>
+  <button class="btn-primary" onclick="startGame()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    Empezar
+  </button>
+</div>
+
+<!-- PANTALLA JUEGO -->
+<div id="screen-game">
+  <div class="page-header">
+    <div class="hdr-left">
+      <span class="hdr-badge">Derecho Civil · Semana 5</span>
+      <span class="hdr-title">Crucigrama</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <div style="text-align:right;">
+        <div id="hdr-name" style="font-size:.78rem;color:var(--skylt);"></div>
+        <div id="hdr-score" class="hdr-score">0 pts</div>
+      </div>
+      <div style="text-align:center;">
+        <div id="timer-display" class="timer-display">10:00</div>
+        <div style="font-size:.7rem;color:var(--slate);">tiempo</div>
+      </div>
+    </div>
+  </div>
+  <div class="progress-wrap"><div id="progress-bar" class="progress-bar" style="width:0%"></div></div>
+
+  <div class="game-body">
+    <div class="grid-wrap">
+      <div id="cw-grid" class="cw-grid"></div>
+    </div>
+    <div class="clues-panel">
+      <div class="clues-section">
+        <h3>Horizontales →</h3>
+        <div id="clues-across"></div>
+      </div>
+      <div class="clues-section">
+        <h3>Verticales ↓</h3>
+        <div id="clues-down"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PANTALLA RESULTADO -->
+<div id="screen-result">
+  <div id="result-emoji" class="result-emoji"></div>
+  <p id="result-name" class="result-name"></p>
+  <div id="result-pts" class="result-pts"></div>
+  <p id="result-sub" class="result-sub"></p>
+  <div id="result-medal" class="result-medal"></div>
+  <div id="result-breakdown" class="result-breakdown"></div>
+  <button class="btn-retry" onclick="location.reload()">↺ Intentar de nuevo</button>
+</div>
+
+<script>
+// ── DATOS ──────────────────────────────────────────────
+const WORDS = [
+  { word:"CONSENTIMIENTO", orig:"CONSENTIMIENTO", clue:"Requisito previo para actos médicos sobre el propio cuerpo — revocable y no se presume (Art. 59 CCyC)", row:6, col:6, dir:"across", num:1 },
+  { word:"PRODIGALIDAD",   orig:"PRODIGALIDAD",   clue:"Comportamiento habitual de dilapidar el patrimonio familiar (Art. 48 CCyC)", row:4, col:7, dir:"down", num:2 },
+  { word:"PRENOMBRE",      orig:"PRENOMBRE",      clue:"Nombre de pila que se inscribe al nacer en el Registro Civil (Art. 63 CCyC)", row:4, col:10, dir:"down", num:3 },
+  { word:"DOMICILIO",      orig:"DOMICILIO",      clue:"Asiento jurídico de la persona para el ejercicio de sus derechos (Arts. 73–78 CCyC)", row:8, col:2, dir:"across", num:4 },
+  { word:"SEUDONIMO",      orig:"SEUDÓNIMO",      clue:"Nombre alternativo elegido por la persona cuando adquiere notoriedad pública (Art. 72 CCyC)", row:0, col:13, dir:"down", num:5 },
+  { word:"INTIMIDAD",      orig:"INTIMIDAD",      clue:"Esfera privada libre de intromisiones — base del fallo Ponzetti de Balbín (Art. 52 CCyC)", row:6, col:15, dir:"down", num:6 },
+  { word:"IDENTIDAD",      orig:"IDENTIDAD",      clue:"Derecho a ser reconocido tal como uno es, incluyendo el género autopercibido (Ley 26.743)", row:3, col:17, dir:"down", num:7 },
+  { word:"CALUMNIA",       orig:"CALUMNIA",       clue:"Imputación falsa de un delito — lesiona el honor objetivo (Art. 52 CCyC)", row:10, col:0, dir:"across", num:8 },
+  { word:"IMAGEN",         orig:"IMAGEN",         clue:"Derecho que exige consentimiento para captar o reproducir el retrato (Art. 53 CCyC)", row:14, col:5, dir:"across", num:9 },
+  { word:"HONOR",          orig:"HONOR",          clue:"Derecho personalísimo que protege la reputación y dignidad frente a ataques externos (Art. 52 CCyC)", row:5, col:19, dir:"down", num:10 },
+];
+
+const ROWS = 16, COLS = 20;
+const TIMER_SECS = 600; // 10 min
+const PTS_MAX = 150, PTS_MIN = 30;
+
+// ── STATE ──────────────────────────────────────────────
+let playerName = '';
+let timerInt = null, timeLeft = TIMER_SECS;
+let cellInputs = {};  // "r,c" → input element
+let solved = new Set();
+let wordPoints = {};
+let selectedWord = null, selectedDir = null;
+let cursorR = -1, cursorC = -1;
+
+// ── GRID BUILD ─────────────────────────────────────────
+function buildGrid() {
+  // Compute active cells
+  const activeCells = {};    // "r,c" → letter
+  const cellWordMap = {};    // "r,c" → [ {wordIdx, posInWord} ]
+  const cellNums = {};       // "r,c" → number
+
+  WORDS.forEach((w, wi) => {
+    const dr = w.dir === 'down' ? 1 : 0;
+    const dc = w.dir === 'across' ? 1 : 0;
+    for (let i = 0; i < w.word.length; i++) {
+      const r = w.row + dr * i, c = w.col + dc * i;
+      const key = `${r},${c}`;
+      activeCells[key] = w.word[i];
+      if (!cellWordMap[key]) cellWordMap[key] = [];
+      cellWordMap[key].push({ wi, pos: i });
+    }
+    cellNums[`${w.row},${w.col}`] = w.num;
+  });
+
+  const grid = document.getElementById('cw-grid');
+  grid.style.gridTemplateColumns = `repeat(${COLS}, 32px)`;
+  grid.style.gridTemplateRows    = `repeat(${ROWS}, 32px)`;
+  grid.innerHTML = '';
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const key = `${r},${c}`;
+      const div = document.createElement('div');
+      div.className = activeCells[key] ? 'cell active' : 'cell blocked';
+      div.dataset.r = r; div.dataset.c = c;
+
+      if (activeCells[key]) {
+        // Number label
+        if (cellNums[key]) {
+          const span = document.createElement('span');
+          span.className = 'cell-num';
+          span.textContent = cellNums[key];
+          div.appendChild(span);
+        }
+        // Input
+        const inp = document.createElement('input');
+        inp.type = 'text'; inp.maxLength = 1;
+        inp.dataset.r = r; inp.dataset.c = c;
+        inp.dataset.answer = activeCells[key];
+        inp.addEventListener('click',  () => handleClick(r, c));
+        inp.addEventListener('keydown', (e) => handleKey(e, r, c));
+        inp.addEventListener('input',   (e) => handleInput(e, r, c));
+        div.appendChild(inp);
+        cellInputs[key] = inp;
+      }
+      grid.appendChild(div);
+    }
+  }
+
+  window._activeCells = activeCells;
+  window._cellWordMap = cellWordMap;
+  buildClues();
+}
+
+function buildClues() {
+  const across = WORDS.filter(w => w.dir === 'across').sort((a,b) => a.num - b.num);
+  const down   = WORDS.filter(w => w.dir === 'down'  ).sort((a,b) => a.num - b.num);
+
+  function render(list, container) {
+    list.forEach(w => {
+      const div = document.createElement('div');
+      div.className = 'clue-item';
+      div.id = `clue-${w.num}-${w.dir}`;
+      div.innerHTML = `<span class="clue-num">${w.num}</span><span class="clue-text">${w.clue}</span>`;
+      div.addEventListener('click', () => selectWordByNum(w.num, w.dir));
+      container.appendChild(div);
+    });
+  }
+  render(across, document.getElementById('clues-across'));
+  render(down,   document.getElementById('clues-down'));
+}
+
+// ── WORD SELECTION ─────────────────────────────────────
+function getWordsAtCell(r, c) {
+  const map = window._cellWordMap[`${r},${c}`] || [];
+  return map.map(({ wi }) => WORDS[wi]);
+}
+
+function selectWord(w) {
+  selectedWord = w;
+  selectedDir  = w.dir;
+  highlightWord(w);
+  // Find clue and scroll
+  document.querySelectorAll('.clue-item').forEach(el => el.classList.remove('active-clue'));
+  const el = document.getElementById(`clue-${w.num}-${w.dir}`);
+  if (el) { el.classList.add('active-clue'); el.scrollIntoView({ block:'nearest', behavior:'smooth' }); }
+}
+
+function selectWordByNum(num, dir) {
+  const w = WORDS.find(x => x.num === num && x.dir === dir);
+  if (!w) return;
+  selectWord(w);
+  // Move cursor to first empty cell of word
+  const dr = w.dir === 'down' ? 1 : 0;
+  const dc = w.dir === 'across' ? 1 : 0;
+  for (let i = 0; i < w.word.length; i++) {
+    const r = w.row + dr * i, c = w.col + dc * i;
+    const inp = cellInputs[`${r},${c}`];
+    if (inp && !inp.value) { moveCursor(r, c); return; }
+  }
+  moveCursor(w.row, w.col);
+}
+
+function handleClick(r, c) {
+  const ws = getWordsAtCell(r, c);
+  if (!ws.length) return;
+  // Toggle direction if clicking same cell
+  if (cursorR === r && cursorC === c && ws.length > 1) {
+    const other = ws.find(w => w !== selectedWord);
+    if (other) { selectWord(other); moveCursor(r, c, true); return; }
+  }
+  if (selectedWord && ws.includes(selectedWord)) { moveCursor(r, c, true); return; }
+  selectWord(ws[0]);
+  moveCursor(r, c, true);
+}
+
+function moveCursor(r, c, noScroll) {
+  cursorR = r; cursorC = c;
+  highlightWord(selectedWord);
+  const inp = cellInputs[`${r},${c}`];
+  if (inp) { inp.focus(); inp.select(); }
+}
+
+function highlightWord(w) {
+  // Clear all highlights
+  document.querySelectorAll('.cell').forEach(el => {
+    el.classList.remove('highlighted','active-word','active-cursor');
+  });
+  if (!w) return;
+  const dr = w.dir === 'down' ? 1 : 0;
+  const dc = w.dir === 'across' ? 1 : 0;
+  for (let i = 0; i < w.word.length; i++) {
+    const r = w.row + dr * i, c = w.col + dc * i;
+    const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+    if (cell) cell.classList.add('active-word');
+  }
+  if (cursorR >= 0) {
+    const cur = document.querySelector(`.cell[data-r="${cursorR}"][data-c="${cursorC}"]`);
+    if (cur) cur.classList.add('active-cursor');
+  }
+}
+
+// ── INPUT HANDLING ─────────────────────────────────────
+function handleInput(e, r, c) {
+  const inp = e.target;
+  const val = inp.value.toUpperCase().replace(/[^A-Z]/g, '');
+  inp.value = val ? val[val.length - 1] : '';
+  if (inp.value) checkAndAdvance(r, c);
+}
+
+function handleKey(e, r, c) {
+  const w = selectedWord;
+  if (!w) return;
+  const dr = w.dir === 'down' ? 1 : 0;
+  const dc = w.dir === 'across' ? 1 : 0;
+
+  if (e.key === 'Backspace') {
+    e.preventDefault();
+    const inp = cellInputs[`${r},${c}`];
+    if (inp && inp.value) { inp.value = ''; return; }
+    // Move back
+    const nr = r - dr, nc = c - dc;
+    if (cellInputs[`${nr},${nc}`]) {
+      cellInputs[`${nr},${nc}`].value = '';
+      moveCursor(nr, nc);
+    }
+    return;
+  }
+  if (e.key === 'ArrowRight') { e.preventDefault(); moveCursor(r, c+1); return; }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); moveCursor(r, c-1); return; }
+  if (e.key === 'ArrowDown')  { e.preventDefault(); moveCursor(r+1, c); return; }
+  if (e.key === 'ArrowUp')    { e.preventDefault(); moveCursor(r-1, c); return; }
+  if (e.key === 'Tab')        { e.preventDefault(); advanceWord(); return; }
+}
+
+function checkAndAdvance(r, c) {
+  if (!selectedWord) return;
+  const w = selectedWord;
+  const dr = w.dir === 'down' ? 1 : 0;
+  const dc = w.dir === 'across' ? 1 : 0;
+  // Advance cursor
+  const nr = r + dr, nc = c + dc;
+  if (cellInputs[`${nr},${nc}`]) moveCursor(nr, nc);
+  // Check word
+  checkWord(w);
+}
+
+function checkWord(w) {
+  if (solved.has(w.num + w.dir)) return;
+  const dr = w.dir === 'down' ? 1 : 0;
+  const dc = w.dir === 'across' ? 1 : 0;
+  let complete = true, correct = true;
+  for (let i = 0; i < w.word.length; i++) {
+    const inp = cellInputs[`${w.row + dr*i},${w.col + dc*i}`];
+    if (!inp || !inp.value) { complete = false; break; }
+    if (inp.value !== w.word[i]) correct = false;
+  }
+  if (!complete) return;
+  if (correct) {
+    solved.add(w.num + w.dir);
+    const pts = calcPts(timeLeft);
+    wordPoints[w.num + w.dir] = pts;
+    // Mark cells green
+    for (let i = 0; i < w.word.length; i++) {
+      const cell = document.querySelector(`.cell[data-r="${w.row + dr*i}"][data-c="${w.col + dc*i}"]`);
+      if (cell) cell.classList.add('correct');
+    }
+    // Mark clue solved
+    const clueEl = document.getElementById(`clue-${w.num}-${w.dir}`);
+    if (clueEl) {
+      clueEl.classList.add('solved-clue');
+      clueEl.innerHTML = `<span class="clue-num">${w.num}</span><span class="clue-text">${w.clue}<span class="clue-word">✓ ${w.orig} · +${pts} pts</span></span>`;
+    }
+    updateScore();
+    updateProgress();
+    if (solved.size === WORDS.length) setTimeout(endGame, 400);
+  } else {
+    // Flash red on wrong complete word
+    for (let i = 0; i < w.word.length; i++) {
+      const cell = document.querySelector(`.cell[data-r="${w.row + dr*i}"][data-c="${w.col + dc*i}"]`);
+      if (cell) { cell.classList.add('wrong'); setTimeout(() => cell.classList.remove('wrong'), 600); }
+    }
+  }
+}
+
+function advanceWord() {
+  const idx = WORDS.indexOf(selectedWord);
+  const next = WORDS[(idx + 1) % WORDS.length];
+  if (!solved.has(next.num + next.dir)) selectWordByNum(next.num, next.dir);
+}
+
+function calcPts(t) {
+  return Math.round(PTS_MIN + (PTS_MAX - PTS_MIN) * (t / TIMER_SECS));
+}
+
+function updateScore() {
+  const total = Object.values(wordPoints).reduce((a, b) => a + b, 0);
+  document.getElementById('hdr-score').textContent = total + ' pts';
+}
+
+function updateProgress() {
+  document.getElementById('progress-bar').style.width = (solved.size / WORDS.length * 100) + '%';
+}
+
+// ── TIMER ──────────────────────────────────────────────
+function startTimer() {
+  timeLeft = TIMER_SECS;
+  timerInt = setInterval(() => {
+    timeLeft--;
+    const m = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+    const s = String(timeLeft % 60).padStart(2, '0');
+    const td = document.getElementById('timer-display');
+    td.textContent = `${m}:${s}`;
+    td.className = 'timer-display' + (timeLeft <= 60 ? ' urgent' : '');
+    if (timeLeft <= 0) { clearInterval(timerInt); endGame(); }
+  }, 1000);
+}
+
+// ── GAME FLOW ──────────────────────────────────────────
+function startGame() {
+  const inp = document.getElementById('player-name').value.trim();
+  if (!inp) { document.getElementById('player-name').focus(); return; }
+  playerName = inp;
+  document.getElementById('screen-start').style.display = 'none';
+  document.getElementById('screen-game').style.display  = 'flex';
+  document.getElementById('screen-game').style.flexDirection = 'column';
+  document.getElementById('hdr-name').textContent = playerName;
+  buildGrid();
+  // Select first word
+  selectWordByNum(1, 'across');
+  startTimer();
+}
+
+function endGame() {
+  clearInterval(timerInt);
+  const total = Object.values(wordPoints).reduce((a, b) => a + b, 0);
+  const maxPts = WORDS.length * PTS_MAX;
+  document.getElementById('screen-game').style.display   = 'none';
+  document.getElementById('screen-result').style.display = 'flex';
+
+  let emoji, medalClass, medalText;
+  if (solved.size === WORDS.length) {
+    emoji = '🏆'; medalClass = 'medal-gold';   medalText = '¡Crucigrama completo!';
+  } else if (solved.size >= 7) {
+    emoji = '⭐'; medalClass = 'medal-silver'; medalText = 'Muy buen trabajo';
+  } else if (solved.size >= 4) {
+    emoji = '👍'; medalClass = 'medal-ok';     medalText = 'Buen intento';
+  } else {
+    emoji = '📚'; medalClass = 'medal-ok';     medalText = 'Seguí repasando';
+  }
+
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-name').textContent  = playerName.toUpperCase();
+  document.getElementById('result-pts').textContent   = total;
+  document.getElementById('result-sub').textContent   = `${solved.size} de ${WORDS.length} palabras · máximo posible: ${maxPts} pts`;
+  const medal = document.getElementById('result-medal');
+  medal.className = 'result-medal ' + medalClass;
+  medal.textContent = medalText;
+
+  const bd = document.getElementById('result-breakdown');
+  bd.innerHTML = WORDS.map(w => {
+    const ok = solved.has(w.num + w.dir);
+    const pts = wordPoints[w.num + w.dir] || 0;
+    return `<div class="bd-row">
+      <span class="bd-icon">${ok ? '✅' : '❌'}</span>
+      <span class="bd-word">${w.num}. ${w.orig}</span>
+      <span class="bd-pts ${ok ? 'ok' : 'bad'}">${ok ? '+' + pts : '0'}</span>
+    </div>`;
+  }).join('');
+
+  if (solved.size >= 8) launchConfetti();
+}
+
+function launchConfetti() {
+  const colors = ['#4A90D9','#A8CFEE','#FFFFFF','#2E7D32','#F9A825'];
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.style.cssText = `position:fixed;width:${6+Math.random()*6}px;height:${6+Math.random()*6}px;border-radius:2px;background:${colors[Math.floor(Math.random()*colors.length)]};left:${Math.random()*100}vw;top:-10px;animation:fall ${1.5+Math.random()*2}s linear forwards;pointer-events:none;z-index:999;transform:rotate(${Math.random()*360}deg);`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }, i * 30);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const style = document.createElement('style');
+  style.textContent = `@keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}`;
+  document.head.appendChild(style);
+  document.getElementById('player-name').addEventListener('keydown', e => { if (e.key === 'Enter') startGame(); });
+});
+</script>
+</body>
+</html>
